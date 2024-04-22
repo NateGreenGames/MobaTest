@@ -18,18 +18,21 @@ public class PlayerAbilityManager : MonoBehaviourPunCallbacks
 
     public void PrimaryFire(bool _isFiring)
     {
-        if(timeSinceLastShot > 1/ primaryRateOfFire)
+        if (PhotonNetwork.IsMasterClient)
         {
-            if (_isFiring)
+            if (timeSinceLastShot > 1 / primaryRateOfFire)
             {
-                timeSinceLastShot = 0;
-                GameObject newBullet = PhotonNetwork.Instantiate(projectile.name, projectileSpawnPoint.position, projectileSpawnPoint.rotation);
-                newBullet.GetComponent<ProjectileBehavior>()._ownerInformation = myPlayerInfo;
+                if (_isFiring)
+                {
+                    timeSinceLastShot = 0;
+                    GameObject newBullet = PhotonNetwork.Instantiate(projectile.name, projectileSpawnPoint.position, Quaternion.LookRotation(myPlayerInfo.playerCamera.transform.forward));
+                    newBullet.GetComponent<ProjectileBehavior>()._ownerInformation = myPlayerInfo;
+                }
             }
-        }
-        else
-        {
-            timeSinceLastShot += Time.deltaTime;
+            else
+            {
+                timeSinceLastShot += Time.deltaTime;
+            }
         }
     }
 }

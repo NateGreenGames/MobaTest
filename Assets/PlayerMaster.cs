@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using UnityEngine;
 using Photon.Pun;
 using TMPro;
+using UnityEngine.UI;
 
 public class PlayerMaster : MonoBehaviourPunCallbacks, IPunObservable
 {
@@ -10,33 +11,72 @@ public class PlayerMaster : MonoBehaviourPunCallbacks, IPunObservable
     public eTeam team;
     public Camera playerCamera;
     public TextMeshProUGUI nameTag;
+    public Slider playerHealthBar;
 
     [SerializeField] private int health = 100;
+    [SerializeField] private int currentHealth;
     private bool isFiring;
+    [SerializeField] float durationOfUIPopup;
+    private float uiActiveTimer;
 
     private PlayerAbilityManager myAbilities;
 
     void Awake()
     {
+        currentHealth = health;
         myAbilities = GetComponent<PlayerAbilityManager>();
+        nameTag.enabled = false;
+        playerHealthBar.gameObject.SetActive(false);
         if (!photonView.IsMine)
         {
             playerCamera.enabled = false;
             playerCamera.GetComponent<AudioListener>().enabled = false;
             nameTag.text = this.photonView.Owner.NickName;
         }
+
+        playerID = photonView.Owner.ActorNumber;
+        if (playerID % 2 == 1)
+        {
+            team = eTeam.redTeam;
+            LevelManager.instance.Players.Add(this);
+            gameObject.transform.position = LevelManager.instance.redTeamSpawnPoints[playerID - 1].position;
+            gameObject.transform.rotation = LevelManager.instance.redTeamSpawnPoints[playerID - 1].rotation;
+        }
         else
         {
-            nameTag.enabled = false;
+            team = eTeam.blueTeam;
+            LevelManager.instance.Players.Add(this);
+            gameObject.transform.position = LevelManager.instance.redTeamSpawnPoints[playerID - 1].position;
+            gameObject.transform.rotation = LevelManager.instance.redTeamSpawnPoints[playerID - 1].rotation;
         }
     }
-
     private void Update()
     {
         CollectInput();
+        UpdateUI();
         myAbilities.PrimaryFire(isFiring);
     }
 
+    private void UpdateUI()
+    {
+        if (!photonView.IsMine)
+        {
+            if (uiActiveTimer > 0)
+            {
+                playerHealthBar.gameObject.SetActive(true);
+                nameTag.enabled = true;
+                playerHealthBar.gameObject.transform.LookAt(GameManager.instance.playerInstance.transform.position);
+                nameTag.gameObject.transform.LookAt(GameManager.instance.playerInstance.transform.position);
+
+                uiActiveTimer -= Time.deltaTime;
+            }
+            else
+            {
+                playerHealthBar.gameObject.SetActive(false);
+                nameTag.enabled = false;
+            }
+        }
+    }
     private void CollectInput()
     {
         if (photonView.IsMine)
@@ -55,14 +95,12 @@ public class PlayerMaster : MonoBehaviourPunCallbacks, IPunObservable
     [PunRPC]
     public void TakeDamage(int _damageTaken)
     {
-        if (health - _damageTaken > 0)
+        currentHealth -= _damageTaken;
+        uiActiveTimer = durationOfUIPopup;
+        playerHealthBar.value = Mathf.InverseLerp(0, health, currentHealth);
+        if (currentHealth - _damageTaken > 0)
         {
-            health -= _damageTaken;
-        }
-        else
-        {
-            health -= _damageTaken;
-            //die;
+            //die and start respawn sequence
         }
     }
 
@@ -73,7 +111,6 @@ public class PlayerMaster : MonoBehaviourPunCallbacks, IPunObservable
         {
             // We own this player: send the others our data
             stream.SendNext(this.isFiring);
-            stream.SendNext(this.health);
             stream.SendNext(this.team);
             stream.SendNext(this.playerID);
         }
@@ -81,7 +118,6 @@ public class PlayerMaster : MonoBehaviourPunCallbacks, IPunObservable
         {
             // Network player, receive data
             this.isFiring = (bool)stream.ReceiveNext();
-            this.health = (int)stream.ReceiveNext();
             this.team = (eTeam)stream.ReceiveNext();
             this.playerID = (int)stream.ReceiveNext();
 
