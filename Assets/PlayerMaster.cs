@@ -33,22 +33,6 @@ public class PlayerMaster : MonoBehaviourPunCallbacks, IPunObservable
             playerCamera.GetComponent<AudioListener>().enabled = false;
             nameTag.text = this.photonView.Owner.NickName;
         }
-
-        playerID = photonView.Owner.ActorNumber;
-        if (playerID % 2 == 1)
-        {
-            team = eTeam.redTeam;
-            LevelManager.instance.Players.Add(this);
-            gameObject.transform.position = LevelManager.instance.redTeamSpawnPoints[playerID - 1].position;
-            gameObject.transform.rotation = LevelManager.instance.redTeamSpawnPoints[playerID - 1].rotation;
-        }
-        else
-        {
-            team = eTeam.blueTeam;
-            LevelManager.instance.Players.Add(this);
-            gameObject.transform.position = LevelManager.instance.redTeamSpawnPoints[playerID - 1].position;
-            gameObject.transform.rotation = LevelManager.instance.redTeamSpawnPoints[playerID - 1].rotation;
-        }
     }
     private void Update()
     {
@@ -65,8 +49,8 @@ public class PlayerMaster : MonoBehaviourPunCallbacks, IPunObservable
             {
                 playerHealthBar.gameObject.SetActive(true);
                 nameTag.enabled = true;
-                playerHealthBar.gameObject.transform.LookAt(GameManager.instance.playerInstance.transform.position);
-                nameTag.gameObject.transform.LookAt(GameManager.instance.playerInstance.transform.position);
+                playerHealthBar.gameObject.transform.LookAt(LobbyManager.instance.thisClientsPlayerPawn.transform.position);
+                nameTag.gameObject.transform.LookAt(LobbyManager.instance.thisClientsPlayerPawn.transform.position);
 
                 uiActiveTimer -= Time.deltaTime;
             }

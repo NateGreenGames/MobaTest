@@ -2410,8 +2410,7 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   mapNames:
   - Nate Map Test
-  currentPlayerInstance: {fileID: 0}
-  playerPrefab: {fileID: 4459864850019384750, guid: 6bacecc4f3df9584198879c73a6b6c36,
+  playerPawn: {fileID: 4459864850019384750, guid: 6bacecc4f3df9584198879c73a6b6c36,
     type: 3}
 --- !u!4 &2080991318
 Transform:

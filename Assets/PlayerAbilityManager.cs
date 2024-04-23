@@ -18,7 +18,7 @@ public class PlayerAbilityManager : MonoBehaviourPunCallbacks
 
     public void PrimaryFire(bool _isFiring)
     {
-        if (PhotonNetwork.IsMasterClient)
+        if (photonView.IsMine)
         {
             if (timeSinceLastShot > 1 / primaryRateOfFire)
             {

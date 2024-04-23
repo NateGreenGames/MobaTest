@@ -5,12 +5,13 @@ using Photon.Pun;
 using UnityEngine.SceneManagement;
 
 public enum eGameState { connectingToMaster, mainMenu, searchingForGame, inGame}
-public class GameManager : MonoBehaviourPunCallbacks
+public class GameManager : MonoBehaviourPunCallbacks, IPunObservable
 {
     public static GameManager instance;
     public string[] mapNames;
     public GameObject playerPawn;
-    public const int numberOfPlayersRequired = 4;
+    public const int numberOfPlayersRequired = 1;
+    public float masterLoadingProgress = 0;
 
     private int state = 0;
 
@@ -32,6 +33,7 @@ public class GameManager : MonoBehaviourPunCallbacks
 
     private void Update()
     {
+        masterLoadingProgress = PhotonNetwork.LevelLoadingProgress;
         if (state == (int)eGameState.searchingForGame)
         {
             if (PhotonNetwork.CurrentRoom.PlayerCount == numberOfPlayersRequired)
@@ -60,6 +62,7 @@ public class GameManager : MonoBehaviourPunCallbacks
     {
         ChangeGameState(eGameState.mainMenu);
         SceneManager.LoadScene("SampleScene");
+        masterLoadingProgress = 0;
     }
     private void ChangeGameState(eGameState _newState)
     {
@@ -70,6 +73,21 @@ public class GameManager : MonoBehaviourPunCallbacks
             {
                 PhotonNetwork.LoadLevel(mapNames[Random.Range(0, mapNames.Length)]);
             }
+        }
+    }
+
+    public void OnPhotonSerializeView(PhotonStream stream, PhotonMessageInfo info)
+    {
+        if (stream.IsWriting)
+        {
+            // We own this player: send the others our data
+            stream.SendNext(this.masterLoadingProgress);
+        }
+        else
+        {
+            // Network player, receive data
+            this.masterLoadingProgress = (float)stream.ReceiveNext();
+
         }
     }
 }
